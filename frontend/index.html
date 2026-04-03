@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CampsMart — Student Marketplace</title>
+    <meta name="description" content="Buy and sell on campus. The smartest way to find deals from fellow students." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      #cursor-dot, #cursor-ring {
+        position: fixed;
+        top: 0;
+        left: 0;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        z-index: 9999;
+        transition: transform 0.2s cubic-bezier(0.19, 1, 0.22, 1), 
+                    background 0.3s ease, border 0.3s ease, 
+                    width 0.3s ease, height 0.3s ease;
+      }
+      #cursor-dot {
+        width: 8px;
+        height: 8px;
+        background: #2563eb;
+        border-radius: 50%;
+      }
+      #cursor-ring {
+        width: 34px;
+        height: 34px;
+        border: 1.5px solid rgba(37, 99, 235, 0.35);
+        border-radius: 50%;
+      }
+      #cursor-light {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 400px;
+        height: 400px;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 75%);
+        pointer-events: none;
+        z-index: 9998;
+        filter: blur(20px);
+      }
+      body {
+        cursor: none;
+      }
+      a, button, input, select, textarea, [role="button"] {
+        cursor: none !important;
+      }
+      @media (max-width: 768px) {
+        #cursor-dot, #cursor-ring, #cursor-light { display: none; }
+        body { cursor: auto; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="cursor-light"></div>
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    <script>
+      const dot = document.getElementById('cursor-dot');
+      const ring = document.getElementById('cursor-ring');
+      const light = document.getElementById('cursor-light');
+      let mx = 0, my = 0, rx = 0, ry = 0;
+      document.addEventListener('mousemove', (e) => {
+        mx = e.clientX; my = e.clientY;
+        dot.style.left = mx + 'px'; dot.style.top = my + 'px';
+        light.style.left = mx + 'px'; light.style.top = my + 'px';
+      });
+      function animateRing() {
+        rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+        ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+        requestAnimationFrame(animateRing);
+      }
+      animateRing();
+      document.addEventListener('mouseover', (e) => {
+        if (e.target.matches('a, button, [role="button"], input, select, textarea, label')) {
+          dot.style.transform = 'translate(-50%, -50%) scale(2)';
+          dot.style.background = '#facc15';
+          ring.style.width = '52px'; ring.style.height = '52px';
+          ring.style.borderColor = 'rgba(250,204,21,0.45)';
+        }
+      });
+      document.addEventListener('mouseout', (e) => {
+        if (e.target.matches('a, button, [role="button"], input, select, textarea, label')) {
+          dot.style.transform = 'translate(-50%, -50%) scale(1)';
+          dot.style.background = '#2563eb';
+          ring.style.width = '34px'; ring.style.height = '34px';
+          ring.style.borderColor = 'rgba(37,99,235,0.35)';
+        }
+      });
+    </script>
+  </body>
+</html>
