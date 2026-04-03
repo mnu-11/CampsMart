@@ -53,7 +53,7 @@ router.get('/', async (req, res) => {
     const skip = (Number(page) - 1) * Number(limit);
     const total = await Item.countDocuments(filter);
     const items = await Item.find(filter)
-      .populate('sellerId', 'name avatar university rating subscription')
+      .populate('sellerId', 'name avatar university rating subscription upiId')
       .sort({ isPremiumPromotion: -1, [sortBy]: order === 'asc' ? 1 : -1 })
       .skip(skip)
       .limit(Number(limit));
@@ -77,7 +77,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const item = await Item.findById(req.params.id)
-      .populate('sellerId', 'name avatar university rating createdAt');
+      .populate('sellerId', 'name avatar university rating createdAt upiId');
 
     if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
 
@@ -164,7 +164,7 @@ router.post('/', protect, upload.array('images', 5), [
       rentPerDay: Number(rentPerDay) || 0,
     });
 
-    await item.populate('sellerId', 'name email avatar university subscription');
+    await item.populate('sellerId', 'name email avatar university subscription upiId');
 
     // Update user listing count
     user.subscription.listingsThisMonth += 1;
@@ -208,7 +208,7 @@ router.put('/:id', protect, upload.array('images', 5), async (req, res) => {
     }
 
     const updatedItem = await Item.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true })
-      .populate('sellerId', 'name email avatar university');
+      .populate('sellerId', 'name email avatar university upiId');
 
     res.json({ success: true, item: updatedItem });
   } catch (error) {
@@ -258,6 +258,26 @@ router.get('/my/all', protect, async (req, res) => {
     const items = await Item.find({ sellerId: req.user._id })
       .sort({ createdAt: -1 });
     res.json({ success: true, items });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route POST /api/items/:id/direct-buy
+router.post('/:id/direct-buy', protect, async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
+    if (item.isSold) return res.status(400).json({ success: false, message: 'Item already sold' });
+    
+    item.isSold = true;
+    item.buyerId = req.user._id;
+    item.paymentStatus = 'completed';
+    item.paymentId = 'direct_upi_' + Date.now();
+    await item.save();
+
+    // Optionally notify admin/seller here
+    res.json({ success: true, message: 'Purchase confirmed successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
   }

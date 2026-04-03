@@ -54,6 +54,11 @@ const userSchema = new mongoose.Schema({
     default: '',
     maxlength: [200, 'Bio cannot exceed 200 characters'],
   },
+  upiId: {
+    type: String,
+    default: '',
+    trim: true,
+  },
   role: {
     type: String,
     enum: ['user', 'admin'],

@@ -51,7 +51,9 @@ export default function AddItemPage() {
       toast.success('Item listed successfully! 🎉');
       navigate(`/items/${res.data.item._id}`);
     } catch (err) {
-      toast.error(err.message);
+      const data = err.response?.data;
+      const msg = data?.errors?.[0]?.msg || data?.message || err.message;
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

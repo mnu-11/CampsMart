@@ -14,7 +14,7 @@ export default function ProfilePage() {
   
   const [form, setForm] = useState({
     name: user?.name || '', university: user?.university || '',
-    phone: user?.phone || '', location: user?.location || '', bio: user?.bio || '',
+    phone: user?.phone || '', location: user?.location || '', bio: user?.bio || '', upiId: user?.upiId || '',
   });
 
   const loadRazorpay = () =>
@@ -218,6 +218,7 @@ export default function ProfilePage() {
                   { icon: Building, label: 'University', key: 'university', type: 'text' },
                   { icon: Phone, label: 'Phone Number', key: 'phone', type: 'tel' },
                   { icon: MapPin, label: 'Campus Area', key: 'location', type: 'text' },
+                  { icon: Wallet, label: 'UPI ID (For Receiving Payments)', key: 'upiId', type: 'text' },
                 ].map(({ icon: Icon, label, key, type }) => (
                   <div key={key}>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 ml-1"><Icon size={11} /> {label}</label>

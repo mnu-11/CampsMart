@@ -26,11 +26,21 @@ export default function Navbar({ darkMode, setDarkMode }) {
   }, []);
 
   useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
     if (!user) return;
     api.get('/notifications').then(r => setUnreadCount(r.data.unreadCount || 0)).catch(() => {});
   }, [user, location.pathname]);
 
-  const handleLogout = () => { logout(); navigate('/'); setProfileOpen(false); };
+  const handleLogout = () => { logout(); navigate('/'); setProfileOpen(false); setMenuOpen(false); };
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -40,7 +50,7 @@ export default function Navbar({ darkMode, setDarkMode }) {
           ? 'glass shadow-2xl shadow-blue-500/10 border-white/20 dark:border-white/5 py-2' 
           : 'bg-white/80 dark:bg-slate-900/80 border-slate-100 dark:border-slate-800 py-3'
       }`}>
-        <div className="page-container flex items-center justify-between gap-2 md:gap-4 px-4 overflow-x-hidden">
+        <div className="page-container flex items-center justify-between gap-2 md:gap-4 px-4">
           
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">

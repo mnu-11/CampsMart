@@ -3,8 +3,9 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { ShoppingCart, Tag, MapPin, Eye, Calendar, CheckCircle, Star, Shield, AlertCircle, Loader, Zap } from 'lucide-react';
+import { ShoppingCart, Tag, MapPin, Eye, Calendar, CheckCircle, Star, Shield, AlertCircle, Loader, Zap, X } from 'lucide-react';
 import RentItemModal from '../components/RentItemModal';
+import QRCode from 'react-qr-code';
 
 export default function ItemDetailPage() {
   const { id } = useParams();
@@ -15,6 +16,7 @@ export default function ItemDetailPage() {
   const [buyLoading, setBuyLoading] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
   const [showRentModal, setShowRentModal] = useState(false);
+  const [showUPIModal, setShowUPIModal] = useState(false);
 
   useEffect(() => {
     api.get(`/items/${id}`)
@@ -23,56 +25,27 @@ export default function ItemDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const loadRazorpay = () =>
-    new Promise(resolve => {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-
   const handleBuy = async () => {
     if (!user) { toast.error('Please login to purchase'); navigate('/login'); return; }
     if (item.adminStatus !== 'approved') { toast.error('This item is not yet approved for sale'); return; }
+    if (!item.sellerId?.upiId) {
+      toast.error('The seller has not set up their UPI ID yet to receive direct payments.');
+      return;
+    }
 
-    const loaded = await loadRazorpay();
-    if (!loaded) { toast.error('Payment gateway failed to load'); return; }
+    setShowUPIModal(true);
+  };
 
+  const handleConfirmDirectPayment = async () => {
     setBuyLoading(true);
     try {
-      const { data } = await api.post('/payment/create-order', { itemId: item._id });
-
-      const options = {
-        key: data.key,
-        amount: data.order.amount,
-        currency: data.order.currency,
-        name: 'Campus Marketplace',
-        description: item.title,
-        order_id: data.order.id,
-        handler: async (response) => {
-          try {
-            await api.post('/payment/verify', {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              orderId: data.order.orderId,
-            });
-            toast.success('🎉 Payment successful! Admin will process your delivery.');
-            navigate('/notifications');
-          } catch {
-            toast.error('Payment verification failed. Contact support.');
-          }
-        },
-        prefill: { name: user.name, email: user.email },
-        theme: { color: '#2563eb' },
-        modal: { ondismiss: () => setBuyLoading(false) },
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
+      await api.post(`/items/${item._id}/direct-buy`);
+      toast.success('🎉 Purchase successful! Item marked as sold.');
+      setShowUPIModal(false);
+      setItem(prev => ({...prev, isSold: true}));
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to initiate payment');
+      toast.error(err.response?.data?.message || 'Failed to confirm purchase');
+    } finally {
       setBuyLoading(false);
     }
   };
@@ -254,6 +227,46 @@ export default function ItemDetailPage() {
             setItem({ ...item, rentalStatus: 'rented' });
           }} 
         />
+      )}
+
+      {showUPIModal && item?.sellerId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-sm p-8 relative shadow-2xl flex flex-col items-center">
+            <button onClick={() => setShowUPIModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-full p-1 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center mb-4 text-blue-600 dark:text-blue-400">
+              <Zap size={32} fill="currentColor" />
+            </div>
+
+            <h2 className="text-xl font-bold mb-1 dark:text-white text-center">Pay {item.sellerId.name}</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 text-center">Scan QR code using Google Pay, PhonePe, or Paytm</p>
+            
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6">
+              <QRCode value={`upi://pay?pa=${item.sellerId.upiId}&pn=${encodeURIComponent(item.sellerId.name)}&am=${item.price}`} size={180} />
+            </div>
+            
+            <div className="w-full bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 mb-6 border border-gray-100 dark:border-gray-700">
+               <div className="flex justify-between items-center mb-2">
+                 <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Amount</span>
+                 <span className="font-black text-lg dark:text-white text-blue-600">₹{item.price.toLocaleString()}</span>
+               </div>
+               <div className="flex justify-between items-center">
+                 <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">UPI ID</span>
+                 <span className="text-xs font-bold dark:text-gray-200 break-all text-right ml-4">{item.sellerId.upiId}</span>
+               </div>
+            </div>
+
+            <button 
+              onClick={handleConfirmDirectPayment} 
+              disabled={buyLoading}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2">
+              {buyLoading ? <Loader className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
+              {buyLoading ? 'Confirming...' : 'I have made the payment'}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

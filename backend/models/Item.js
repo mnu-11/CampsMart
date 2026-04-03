@@ -147,8 +147,8 @@ const itemSchema = new mongoose.Schema({
   },
 });
 
-itemSchema.pre('save', function (next) {
-  if (this.sellerPrice && (!this.price || this.isModified('sellerPrice'))) {
+itemSchema.pre('validate', function (next) {
+  if (this.sellerPrice !== undefined && (this.price === undefined || this.isModified('sellerPrice'))) {
     this.commission = Math.ceil(this.sellerPrice * 0.1); // Admin 10%
     this.price = this.sellerPrice + this.commission; // Final price
   }

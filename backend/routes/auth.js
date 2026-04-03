@@ -223,10 +223,10 @@ router.get('/me', protect, async (req, res) => {
 // @route   PUT /api/auth/profile
 router.put('/profile', protect, async (req, res) => {
   try {
-    const { name, university, phone, location, bio } = req.body;
+    const { name, university, phone, location, bio, upiId } = req.body;
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { name, university, phone, location, bio },
+      { name, university, phone, location, bio, upiId },
       { new: true, runValidators: true }
     );
     res.json({ success: true, user });
