@@ -84,14 +84,15 @@ router.patch('/users/:id/approve', adminOnly, async (req, res) => {
       message: 'Your account has been approved! You can now buy and sell on Campus Marketplace.',
     });
 
-    await sendEmail(user.email, 'Your Campus Marketplace account is approved!', `
+    // Send email without awaiting or with safety catch to prevent 500 on action
+    sendEmail(user.email, 'Your Campus Marketplace account is approved!', `
       <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px;">
         <h2 style="color:#2563eb;">Campus Marketplace</h2>
         <h3>Account Approved! 🎉</h3>
         <p>Hi ${user.name}, your College ID has been verified and your account is now active.</p>
         <a href="${process.env.CLIENT_URL}/login" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Login Now</a>
       </div>
-    `);
+    `).catch(e => console.error('Approval Email Fail:', e.message));
 
     res.json({ success: true, message: 'User approved', user });
   } catch (error) {
@@ -106,14 +107,14 @@ router.patch('/users/:id/reject', adminOnly, async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    await sendEmail(user.email, 'Campus Marketplace Account — Action Required', `
+    sendEmail(user.email, 'Campus Marketplace Account — Action Required', `
       <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px;">
         <h2 style="color:#ef4444;">Account Verification Issue</h2>
         <p>Hi ${user.name}, we could not verify your College ID.</p>
         ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
         <p>Please contact support or re-register with a valid College ID.</p>
       </div>
-    `);
+    `).catch(e => console.error('Reject Email Fail:', e.message));
 
     await User.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'User rejected and removed' });
@@ -203,7 +204,7 @@ router.patch('/items/:id/status', adminOnly, async (req, res) => {
         itemId: item._id,
         message: sellerMsg,
       });
-      await sendEmail(item.sellerId.email, `Item Update: ${item.title}`, `
+      sendEmail(item.sellerId.email, `Item Update: ${item.title}`, `
         <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:24px;background:#f9fafb;border-radius:12px;">
           <h2 style="color:#2563eb;">Campus Marketplace</h2>
           <p>${sellerMsg}</p>
@@ -211,7 +212,7 @@ router.patch('/items/:id/status', adminOnly, async (req, res) => {
           ${adminRating ? `<p><strong>Item rating:</strong> ${'⭐'.repeat(adminRating)}</p>` : ''}
           <a href="${process.env.CLIENT_URL}/my-items" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;margin-top:12px;">View My Items</a>
         </div>
-      `);
+      `).catch(e => console.error('Item Status Email Fail:', e.message));
     }
 
     res.json({ success: true, item: updatedItem });
@@ -243,14 +244,14 @@ router.patch('/items/:id/rate', adminOnly, async (req, res) => {
       metadata: { rating, notes },
     });
 
-    await sendEmail(item.sellerId.email, `Your item has been rated: ${item.title}`, `
+    sendEmail(item.sellerId.email, `Your item has been rated: ${item.title}`, `
       <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:24px;background:#f9fafb;border-radius:12px;">
         <h2 style="color:#2563eb;">Item Rated & Approved</h2>
         <p>Your item <strong>${item.title}</strong> has been rated <strong>${rating}/5 ⭐</strong> by the admin and is now live for buyers!</p>
         ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
         <a href="${process.env.CLIENT_URL}/my-items" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;margin-top:12px;">View My Items</a>
       </div>
-    `);
+    `).catch(e => console.error('Item Rating Email Fail:', e.message));
 
     res.json({ success: true, item });
   } catch (error) {
