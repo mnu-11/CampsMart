@@ -1,27 +1,27 @@
-const SibApiV3Sdk = require('@getbrevo/brevo');
+const nodemailer = require('nodemailer');
 
-const getBrevoClient = () => {
-  const client = new SibApiV3Sdk.TransactionalEmailsApi();
-  client.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
-  return client;
-};
+const getTransporter = () => nodemailer.createTransport({
+  host: 'smtp-relay.brevo.com',
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,       // Your Brevo account email
+    pass: process.env.BREVO_SMTP_KEY,   // Brevo SMTP key (NOT your password)
+  },
+});
 
 /**
- * Send an email using Brevo HTTP API (works on all cloud providers, no domain verification needed)
- * @param {string} to - Recipient email
- * @param {string} subject - Email subject
- * @param {string} html - HTML body
+ * Send an email via Brevo SMTP relay (works on cloud providers unlike Gmail SMTP)
  */
 const sendEmail = async (to, subject, html) => {
-  const client = getBrevoClient();
-  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-
-  sendSmtpEmail.sender = { name: 'CampsMart', email: process.env.EMAIL_USER };
-  sendSmtpEmail.to = [{ email: to }];
-  sendSmtpEmail.subject = subject;
-  sendSmtpEmail.htmlContent = html;
-
-  await client.sendTransacEmail(sendSmtpEmail);
+  const transporter = getTransporter();
+  await transporter.sendMail({
+    from: `"CampsMart" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html,
+  });
 };
 
 module.exports = { sendEmail };
+
