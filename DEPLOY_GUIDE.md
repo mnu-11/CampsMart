@@ -32,7 +32,7 @@ Follow these steps to take your Campus Marketplace from "local" to "live"!
    - **Build Command**: `npm run build`
    - **Start Command**: `npm run dev` (Vite)
 4. **Add Environment Variables**:
-   - `VITE_API_BASE_URL`: (Paste your Render Backend URL here, e.g., `https://campsmart.onrender.com/api`)
+   - `VITE_API_URL`: (Paste your Render/Vercel Backend URL here, e.g., `https://campsmart.onrender.com/api`)
 
 ---
 
@@ -44,7 +44,7 @@ Follow these steps to take your Campus Marketplace from "local" to "live"!
 ---
 
 ### 🛡️ Deployment Checklist:
-- [ ] **Email Setup**: Make sure you use a **Gmail App Password** in `EMAIL_PASS`.
+- [ ] **Email Setup**: Make sure you set `RESEND_API_KEY` in your backend environment variables.
 - [ ] **Security**: Ensure your `.env` files are in `.gitignore`.
 - [ ] **Payments**: Use Razorpay **Live Keys** for real transactions (not `rzp_test`).
 
