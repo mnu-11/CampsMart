@@ -3,7 +3,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { Resend } = require('resend');
+const { sendEmail } = require('../utils/email');
 const User = require('../models/User');
 const OTP = require('../models/OTP');
 const Notification = require('../models/Notification');
@@ -11,16 +11,11 @@ const { protect } = require('../middleware/auth');
 
 const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-// Resend HTTP-based email (not blocked by cloud providers)
-const getResend = () => new Resend(process.env.RESEND_API_KEY);
-
 const sendOTPEmail = async (email, otp) => {
-  const resend = getResend();
-  const { error } = await resend.emails.send({
-    from: 'CampsMart <onboarding@resend.dev>',
-    to: email,
-    subject: `Your CampsMart Verification Code: ${otp}`,
-    html: `
+  await sendEmail(
+    email,
+    `Your CampsMart Verification Code: ${otp}`,
+    `
       <div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;">
         <h2 style="color:#2563eb;margin-top:0;">CampsMart</h2>
         <p style="color:#374151;font-size:16px;">Use the code below to verify your email address.</p>
@@ -29,9 +24,8 @@ const sendOTPEmail = async (email, otp) => {
         </div>
         <p style="color:#6b7280;font-size:13px;margin-bottom:0;">This code expires in 10 minutes. If you didn't request this, ignore this email.</p>
       </div>
-    `,
-  });
-  if (error) throw new Error(error.message);
+    `
+  );
 };
 
 const notifyAdmin = async (type, message, itemId = null, senderId = null, metadata = {}) => {
@@ -44,20 +38,18 @@ const notifyAdmin = async (type, message, itemId = null, senderId = null, metada
 
     // Also send email to admin
     if (process.env.ADMIN_EMAIL) {
-      const resend = getResend();
-      await resend.emails.send({
-        from: 'CampsMart <onboarding@resend.dev>',
-        to: process.env.ADMIN_EMAIL,
-        subject: `[Admin Alert] ${message}`,
-        html: `
+      await sendEmail(
+        process.env.ADMIN_EMAIL,
+        `[Admin Alert] ${message}`,
+        `
           <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:24px;background:#f9fafb;border-radius:12px;">
             <h2 style="color:#2563eb;">Campus Marketplace — Admin Alert</h2>
             <p>${message}</p>
             ${Object.keys(metadata).length ? `<pre style="background:#e5e7eb;padding:12px;border-radius:8px;">${JSON.stringify(metadata, null, 2)}</pre>` : ''}
             <a href="${process.env.CLIENT_URL}/admin" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;margin-top:12px;">Open Admin Panel</a>
           </div>
-        `,
-      }).catch(e => console.warn('Admin email warn:', e.message));
+        `
+      ).catch(e => console.warn('Admin email warn:', e.message));
     }
   } catch (e) {
     console.error('notifyAdmin error:', e.message);

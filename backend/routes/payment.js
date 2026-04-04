@@ -7,23 +7,16 @@ const Order = require('../models/Order');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
-const { Resend } = require('resend');
+const { sendEmail } = require('../utils/email');
 
 const getRazorpay = () => new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID.trim(),
   key_secret: process.env.RAZORPAY_KEY_SECRET.trim(),
 });
 
-const sendEmail = async (to, subject, html) => {
+const sendPaymentEmail = async (to, subject, html) => {
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const { error } = await resend.emails.send({
-      from: 'CampsMart <onboarding@resend.dev>',
-      to,
-      subject,
-      html,
-    });
-    if (error) console.warn('Resend warning:', error.message);
+    await sendEmail(to, subject, html);
   } catch (e) {
     console.warn('Email warning:', e.message);
   }
