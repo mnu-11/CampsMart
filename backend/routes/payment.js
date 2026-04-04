@@ -102,14 +102,47 @@ router.post('/verify', protect, async (req, res) => {
 
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
-    // Mark item as sold with buyer info
-    await Item.findByIdAndUpdate(order.itemId._id, {
-      isSold: true,
-      buyerId: req.user._id,
-      paymentStatus: 'completed',
-      paymentId: razorpay_payment_id,
-    });
+    // ATOMIC LOCK: Only mark as sold if it's NOT already sold
+    // This prevents race conditions where two users pay at the exact same time
+    const updatedItem = await Item.findOneAndUpdate(
+      { _id: order.itemId._id, isSold: false },
+      {
+        $set: {
+          isSold: true,
+          buyerId: req.user._id,
+          paymentStatus: 'completed',
+          paymentId: razorpay_payment_id,
+        }
+      },
+      { new: true }
+    );
 
+    if (!updatedItem) {
+      // DANGER: Payment successful but item was ALREADY bought by someone else
+      console.error(`💥 RACE CONDITION DETECTED: Item ${order.itemId._id} already sold to someone else!`);
+      
+      // Notify Admin for Manual Refund
+      if (process.env.ADMIN_EMAIL) {
+        await sendEmail(process.env.ADMIN_EMAIL, `🚨 CRITICAL: DOUBLE PAYMENT for ${order.itemId.title}`, `
+          <h2 style="color:red;">Action Required: Double Payment</h2>
+          <p>Two users paid for the same item: <b>${order.itemId.title}</b>.</p>
+          <p>The item was already sold to another buyer. You MUST refund this payment manually:</p>
+          <ul>
+            <li><b>Payment ID:</b> ${razorpay_payment_id}</li>
+            <li><b>Buyer:</b> ${order.buyerId.name} (${order.buyerId.email})</li>
+            <li><b>Amount:</b> ₹${order.amount}</li>
+          </ul>
+        `).catch(e => console.error('Admin alert failed:', e));
+      }
+
+      return res.status(409).json({ 
+        success: false, 
+        message: 'This item was just bought by another user. Your payment was successful, but the item is no longer available. Our team will contact you for a full refund within 24 hours.',
+        paymentId: razorpay_payment_id 
+      });
+    }
+
+    // If we reached here, this user successfully "locked" the item
     // Notify admin & Credit Commission
     const admins = await User.find({ role: 'admin' });
     const commissionAmt = order.itemId.commission || Math.ceil(order.amount * 0.09); // Fallback: 9% approx of display price if old item
