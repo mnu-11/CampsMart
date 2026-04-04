@@ -14,8 +14,8 @@ const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expires
 // Email transporter
 const getTransporter = () => nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false, // Use TLS
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
