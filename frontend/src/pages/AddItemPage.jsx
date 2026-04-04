@@ -261,22 +261,22 @@ export default function AddItemPage() {
                 <p className="text-slate-500 dark:text-slate-500 text-sm mb-6">Up to 5 photos. Clear images get 3× more views.</p>
                 <div className="grid grid-cols-3 gap-3">
                   {images.map((img, i) => (
-                    <div key={i} className="relative aspect-square rounded-2xl overflow-hidden bg-[#f0f4ff] dark:bg-[#0f1628] group">
+                    <div key={i} className="relative aspect-[4/3] max-h-[140px] rounded-2xl overflow-hidden bg-[#f0f4ff] dark:bg-[#0f1628] group border border-slate-100 dark:border-slate-800">
                       <img src={img.url} alt={`Preview ${i}`} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <button type="button" onClick={() => removeImage(i)} className="w-9 h-9 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg">
                           <X size={14} />
                         </button>
                       </div>
-                      {i === 0 && <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">Main</div>}
+                      {i === 0 && <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-[9px] font-bold px-2.5 py-1 rounded-full">Main Photo</div>}
                     </div>
                   ))}
                   {images.length < 5 && (
-                    <label className="aspect-square rounded-2xl border-2 border-dashed border-[#e8edf5] dark:border-[#141929] hover:border-blue-400 dark:hover:border-blue-500 cursor-pointer flex flex-col items-center justify-center gap-2 transition-all duration-200 group bg-[#f8faff] dark:bg-[#0f1628] hover:bg-[#f0f4ff]">
+                    <label className="aspect-[4/3] max-h-[140px] rounded-2xl border-2 border-dashed border-[#e8edf5] dark:border-[#141929] hover:border-blue-400 dark:hover:border-blue-500 cursor-pointer flex flex-col items-center justify-center gap-2 transition-all duration-200 group bg-[#f8faff] dark:bg-[#0f1628] hover:bg-[#f0f4ff]">
                       <div className="w-10 h-10 rounded-2xl bg-[#f0f4ff] dark:bg-[#141929] group-hover:bg-blue-100 dark:group-hover:bg-blue-500/15 flex items-center justify-center transition-colors">
                         <Upload size={17} className="text-slate-400 group-hover:text-blue-500" />
                       </div>
-                      <span className="text-xs text-slate-500 font-medium">{images.length === 0 ? 'Add Photos' : 'Add More'}</span>
+                      <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{images.length === 0 ? 'Add Photos' : 'Add More'}</span>
                       <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
                     </label>
                   )}
@@ -284,7 +284,7 @@ export default function AddItemPage() {
                 {images.length === 0 && (
                   <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-500/10 rounded-2xl border border-amber-200 dark:border-amber-500/20 flex items-start gap-3">
                     <ImageIcon size={15} className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-amber-700 dark:text-amber-300">Photos are optional but items with images sell much faster.</p>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 font-medium leading-relaxed">Photos are optional but items with images sell much faster.</p>
                   </div>
                 )}
               </div>
@@ -293,13 +293,13 @@ export default function AddItemPage() {
             {/* Step 3 */}
             {step === 3 && (
               <div className="animate-fade-in">
-                <h2 className="font-display font-bold text-lg mb-6">Review Listing</h2>
-                <div className="flex gap-5 mb-6 p-4 bg-[#f8faff] dark:bg-[#0f1628] rounded-2xl">
+                <h2 className="font-display font-bold text-lg mb-6 tracking-tight">Review Listing</h2>
+                <div className="flex gap-5 mb-6 p-5 bg-[#f8faff] dark:bg-[#0f1628] rounded-2xl border border-slate-100 dark:border-slate-800">
                   {images[0] ? (
-                    <img src={images[0].url} alt="Preview" className="w-20 h-20 rounded-xl object-cover flex-shrink-0" />
+                    <img src={images[0].url} alt="Preview" className="w-[110px] h-[82.5px] rounded-xl object-cover flex-shrink-0 shadow-sm" />
                   ) : (
-                    <div className="w-20 h-20 rounded-xl bg-[#f0f4ff] dark:bg-[#141929] flex items-center justify-center flex-shrink-0">
-                      <ImageIcon size={22} className="text-slate-400" />
+                    <div className="w-[110px] h-[82.5px] rounded-xl bg-[#f0f4ff] dark:bg-[#141929] flex items-center justify-center flex-shrink-0">
+                      <ImageIcon size={28} className="text-slate-400" />
                     </div>
                   )}
                   <div>

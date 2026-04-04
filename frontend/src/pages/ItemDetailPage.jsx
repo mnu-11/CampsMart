@@ -73,9 +73,9 @@ export default function ItemDetailPage() {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Images */}
           <div className="space-y-3">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 aspect-square">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 aspect-[4/3] max-h-[500px]">
               {item.images?.length > 0 ? (
-                <img src={item.images[activeImg].url} alt={item.title} className="w-full h-full object-contain" />
+                <img src={item.images[activeImg].url} alt={item.title} className="w-full h-full object-contain bg-slate-50 dark:bg-slate-900" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-300">
                   <Tag className="w-20 h-20" />
