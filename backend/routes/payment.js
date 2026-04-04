@@ -7,7 +7,7 @@ const Order = require('../models/Order');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 const getRazorpay = () => new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID.trim(),
@@ -16,13 +16,14 @@ const getRazorpay = () => new Razorpay({
 
 const sendEmail = async (to, subject, html) => {
   try {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const { error } = await resend.emails.send({
+      from: 'CampsMart <onboarding@resend.dev>',
+      to,
+      subject,
+      html,
     });
-    await transporter.sendMail({ from: `"Campus Marketplace" <${process.env.EMAIL_USER}>`, to, subject, html });
+    if (error) console.warn('Resend warning:', error.message);
   } catch (e) {
     console.warn('Email warning:', e.message);
   }

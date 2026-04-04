@@ -3,7 +3,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const User = require('../models/User');
 const OTP = require('../models/OTP');
 const Notification = require('../models/Notification');
@@ -11,21 +11,13 @@ const { protect } = require('../middleware/auth');
 
 const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-// Email transporter
-const getTransporter = () => nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // Use TLS
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+// Resend HTTP-based email (not blocked by cloud providers)
+const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
 const sendOTPEmail = async (email, otp) => {
-  const transporter = getTransporter();
-  await transporter.sendMail({
-    from: `"CampsMart" <${process.env.EMAIL_USER}>`,
+  const resend = getResend();
+  const { error } = await resend.emails.send({
+    from: 'CampsMart <onboarding@resend.dev>',
     to: email,
     subject: `Your CampsMart Verification Code: ${otp}`,
     html: `
@@ -39,6 +31,7 @@ const sendOTPEmail = async (email, otp) => {
       </div>
     `,
   });
+  if (error) throw new Error(error.message);
 };
 
 const notifyAdmin = async (type, message, itemId = null, senderId = null, metadata = {}) => {
@@ -51,9 +44,9 @@ const notifyAdmin = async (type, message, itemId = null, senderId = null, metada
 
     // Also send email to admin
     if (process.env.ADMIN_EMAIL) {
-      const transporter = getTransporter();
-      await transporter.sendMail({
-        from: `"Campus Marketplace" <${process.env.EMAIL_USER}>`,
+      const resend = getResend();
+      await resend.emails.send({
+        from: 'CampsMart <onboarding@resend.dev>',
         to: process.env.ADMIN_EMAIL,
         subject: `[Admin Alert] ${message}`,
         html: `
@@ -89,7 +82,7 @@ router.post('/send-otp', [
     res.json({ success: true, message: 'OTP sent to your email' });
   } catch (error) {
     console.error('Send OTP error:', error);
-    res.status(500).json({ success: false, message: 'Failed to send OTP. Check your SMTP settings.' });
+    res.status(500).json({ success: false, message: 'Failed to send OTP. Details: ' + error.message });
   }
 });
 

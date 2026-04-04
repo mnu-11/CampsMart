@@ -5,19 +5,20 @@ const Item = require('../models/Item');
 const Order = require('../models/Order');
 const Notification = require('../models/Notification');
 const { adminOnly } = require('../middleware/auth');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const getTransporter = () => nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-});
+const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async (to, subject, html) => {
   try {
-    const transporter = getTransporter();
-    await transporter.sendMail({ from: `"Campus Marketplace" <${process.env.EMAIL_USER}>`, to, subject, html });
+    const resend = getResend();
+    const { error } = await resend.emails.send({
+      from: 'CampsMart <onboarding@resend.dev>',
+      to,
+      subject,
+      html,
+    });
+    if (error) console.warn('Resend warning:', error.message);
   } catch (e) {
     console.warn('Email warning:', e.message);
   }
