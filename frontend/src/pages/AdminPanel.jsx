@@ -55,6 +55,30 @@ function DashboardTab({ stats }) {
         <StatCard title="Pending Review" value={stats.pendingItems} icon={AlertTriangle} color="bg-orange-500" sub="Need admin rating" />
         <StatCard title="Orders" value={stats.totalOrders} icon={ShoppingCart} color="bg-indigo-500" />
         <StatCard title="Revenue" value={`₹${(stats.revenue || 0).toLocaleString()}`} icon={TrendingUp} color="bg-emerald-500" />
+        
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Active Rentals</span>
+            <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-white" />
+            </div>
+          </div>
+          <div className="flex items-end justify-between">
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.activeRentals || 0}</p>
+            <button 
+              onClick={async () => {
+                try {
+                  const { data } = await api.post('/admin/rentals/process');
+                  toast.success(data.message);
+                  window.location.reload(); // Refresh to update balances
+                } catch { toast.error('Processing failed'); }
+              }}
+              className="text-[10px] bg-amber-500 hover:bg-amber-600 text-white px-2 py-1.5 rounded-lg font-bold uppercase transition-all shadow-sm"
+            >
+              Pay Sellers
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -19,10 +19,7 @@ router.post('/rent', protect, async (req, res) => {
     if (item.rentalStatus !== 'available') return res.status(400).json({ success: false, message: 'Item is currently unavailable' });
     if (item.sellerId._id.toString() === req.user._id.toString()) return res.status(400).json({ success: false, message: 'Cannot rent your own item' });
 
-    // Premium Check
-    if (req.user.subscription?.plan !== 'premium') {
-      return res.status(403).json({ success: false, message: 'Premium subscription required to rent items' });
-    }
+    // Renting is open to all students
 
     const totalFee = item.rentPerDay * days;
     const user = await User.findById(req.user._id);

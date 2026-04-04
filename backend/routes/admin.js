@@ -26,15 +26,68 @@ router.get('/dashboard', adminOnly, async (req, res) => {
       Item.countDocuments({ adminStatus: 'pending' }),
       Order.countDocuments({ status: 'paid' }),
       Order.aggregate([{ $match: { status: { $in: ['paid', 'delivered'] } } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
+      Rental.countDocuments({ status: 'active' }),
     ]);
     res.json({
       success: true,
       stats: {
         totalUsers, pendingUsers, totalItems, soldItems, pendingItems,
         totalOrders, revenue: revenue[0]?.total || 0,
+        activeRentals,
       },
     });
   } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route POST /api/admin/rentals/process
+// @desc Process daily rent payouts from locked points to sellers
+router.post('/rentals/process', adminOnly, async (req, res) => {
+  try {
+    const activeRentals = await Rental.find({ status: 'active' }).populate('itemId');
+    let processed = 0;
+    
+    for (const rental of activeRentals) {
+      const now = new Date();
+      const diffDays = Math.floor((now - new Date(rental.lastChargeDate)) / (1000 * 60 * 60 * 24));
+      
+      if (diffDays >= 1) {
+        const amountToPay = rental.dailyRate * diffDays;
+        
+        // 1. Pay Seller
+        const seller = await User.findById(rental.ownerId);
+        if (seller) {
+          seller.wallet.balance += amountToPay;
+          seller.wallet.transactions.push({
+            type: 'commission',
+            amount: amountToPay,
+            description: `Rent received for "${rental.itemId?.title || 'Item'}" (${diffDays} days)`,
+          });
+          await seller.save();
+          
+          await Notification.create({
+            type: 'payment_success',
+            recipientId: seller._id,
+            message: `💰 You received ₹${amountToPay} rent for "${rental.itemId?.title || 'Item'}"!`,
+          });
+        }
+        
+        // 2. Reduce Locked Amount from Rental record
+        rental.daysPaid += diffDays;
+        rental.lockedAmount -= amountToPay;
+        rental.lastChargeDate = now;
+        if (rental.lockedAmount <= 0) rental.payoutStatus = 'completed';
+        else rental.payoutStatus = 'partial';
+        
+        await rental.save();
+        processed++;
+      }
+    }
+    
+    res.json({ success: true, message: `Processed ${processed} rentals.` });
+  } catch (error) {
+    console.error('Rental process error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });

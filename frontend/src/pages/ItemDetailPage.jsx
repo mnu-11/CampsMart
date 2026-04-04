@@ -165,19 +165,13 @@ export default function ItemDetailPage() {
             )}
 
             {/* Rent button */}
-            {canBuy && item.isForRent && user?.subscription?.plan === 'premium' && item.rentalStatus === 'available' && (
+            {canBuy && item.isForRent && item.rentalStatus === 'available' && (
               <button 
                 onClick={() => setShowRentModal(true)}
                 className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-3 text-lg transition-colors shadow-lg shadow-amber-200 dark:shadow-none">
                 <Calendar className="w-5 h-5" />
                 Rent for ₹{item.rentPerDay}/day
               </button>
-            )}
-
-            {canBuy && item.isForRent && user?.subscription?.plan !== 'premium' && (
-              <p className="text-[10px] text-center text-amber-500 border border-amber-500/20 rounded-lg py-2 flex items-center justify-center gap-2">
-                <Shield size={10} /> Premium Subscription required to rent items.
-              </p>
             )}
 
             {item.rentalStatus === 'rented' && (

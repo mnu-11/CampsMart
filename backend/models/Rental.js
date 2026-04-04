@@ -44,6 +44,19 @@ const rentalSchema = new mongoose.Schema({
   returnDate: {
     type: Date,
   },
+  daysPaid: {
+    type: Number,
+    default: 0,
+  },
+  lastChargeDate: {
+    type: Date,
+    default: Date.now,
+  },
+  payoutStatus: {
+    type: String,
+    enum: ['pending', 'partial', 'completed'],
+    default: 'pending',
+  },
   createdAt: {
     type: Date,
     default: Date.now,
