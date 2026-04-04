@@ -16,6 +16,10 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'User no longer exists.' });
     }
     req.user = user;
+    
+    // Update lastActive timestamp on each request
+    await User.findByIdAndUpdate(user._id, { lastActive: Date.now() });
+
     next();
   } catch (error) {
     return res.status(401).json({ success: false, message: 'Invalid or expired token.' });

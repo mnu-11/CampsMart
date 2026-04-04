@@ -57,6 +57,21 @@ router.get('/users', adminOnly, async (req, res) => {
   }
 });
 
+// @route GET /api/admin/users/inactive
+router.get('/users/inactive', adminOnly, async (req, res) => {
+  try {
+    const sixMonthsAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
+    const users = await User.find({
+      role: 'user',
+      lastActive: { $lt: sixMonthsAgo }
+    }).sort({ lastActive: 1 });
+    
+    res.json({ success: true, count: users.length, users });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // @route PATCH /api/admin/users/:id/approve
 router.patch('/users/:id/approve', adminOnly, async (req, res) => {
   try {

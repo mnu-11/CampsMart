@@ -71,7 +71,8 @@ function UsersTab() {
 
   const load = useCallback(() => {
     setLoading(true);
-    api.get(`/admin/users?status=${filter}`).then(r => setUsers(r.data.users)).finally(() => setLoading(false));
+    const url = filter === 'inactive' ? '/admin/users/inactive' : `/admin/users?status=${filter}`;
+    api.get(url).then(r => setUsers(r.data.users)).finally(() => setLoading(false));
   }, [filter]);
 
   useEffect(() => { load(); }, [load]);
@@ -107,7 +108,7 @@ function UsersTab() {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">Users</h2>
         <div className="flex gap-2">
-          {['pending', 'approved', 'unverified', 'all'].map(f => (
+          {['pending', 'approved', 'unverified', 'inactive', 'all'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-colors ${filter === f ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}>
               {f}
@@ -131,7 +132,10 @@ function UsersTab() {
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{u.email}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{u.university} • College ID: <span className="font-mono font-semibold text-gray-700 dark:text-gray-300">{u.collegeId}</span></p>
-                    <p className="text-xs text-gray-400">Registered {formatDistanceToNow(new Date(u.createdAt), { addSuffix: true })}</p>
+                    <div className="flex gap-4 mt-1">
+                      <p className="text-[10px] text-gray-400 uppercase font-black tracking-tighter italic">Registered {formatDistanceToNow(new Date(u.createdAt), { addSuffix: true })}</p>
+                      {u.lastActive && <p className="text-[10px] text-blue-400 uppercase font-black tracking-tighter italic">Active {formatDistanceToNow(new Date(u.lastActive), { addSuffix: true })}</p>}
+                    </div>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
                     {u.collegeIdImage && (
