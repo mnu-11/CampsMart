@@ -43,6 +43,12 @@ const sendEmail = (to, subject, html) => {
         });
       });
 
+      // Add timeout to prevent hanging
+      req.setTimeout(10000, () => {
+        req.destroy();
+        reject(new Error('Email request timed out (Brevo)'));
+      });
+
       req.on('error', (e) => reject(e));
       req.write(emailData);
       req.end();
